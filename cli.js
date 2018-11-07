@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 //Table storing the maximum passengers which can fit in each vehicle
-const maxPassengers = {
+const passengerCapacity = {
   'STANDARD': 4,
   'EXECUTIVE': 4,
   'LUXURY': 4,
@@ -9,6 +9,7 @@ const maxPassengers = {
   'LUXURY_PEOPLE_CARRIER': 6,
   'MINIBUS': 16
 }
+const vehicleTypes = ['STANDARD', 'EXECUTIVE', 'LUXURY', 'PEOPLE_CARRIER', 'LUXURY_PEOPLE_CARRIER', 'MINIBUS']
 
 
 //Get arguments
@@ -26,28 +27,55 @@ try {
 }
 
 
-//Make request to API
+//Make requests to API
 let axios = require('axios');
-const apiRoot = 'https://techtest.rideways.com/dave'
-let query = apiRoot + '?pickup=' + pickup + '&dropoff=' + dropoff
-axios.get(query)
+const apiRoot = 'https://techtest.rideways.com/'
+let queries = '?pickup=' + pickup + '&dropoff=' + dropoff
+axios.all([
+  //Make a request for each supplier
+  axios.get(apiRoot + 'dave' + queries),
+  axios.get(apiRoot + 'eric' + queries),
+  axios.get(apiRoot + 'jeff' + queries)
+])
   .then(response => {
-    let options = response.data.options;
-    //Sort the options by price descending
-    options.sort(function(a, b){
+    let vendors = ['dave', 'eric', 'jeff']
+    var filtered = []; //Filter the responses so only the cheapest for each vehicle type remains
+    for(var v in vendors){ //Loop over dave,eric,jeff
+      let options = response[v].data.options;
+      for(var o in options){ //Loop over options returned for this vendor
+        let type = options[o].car_type
+        let price = options[o].price
+        //Check if this vehicle type is already in the filtered list
+        let found = -1;
+        for(var i in filtered){
+          if(filtered[i].type == type){
+            found = i;
+            break;
+          }
+        }
+        if(found >= 0){ //If entry was already in list
+          if(filtered[found].price > price){ //Overwrite entry if the price is lower
+            filtered[found].type = type;
+            filtered[found].price = price;
+            filtered[found].vendor = vendors[v];
+          }
+        } else { //Entry was not in filtered list so add it to list
+          filtered.push({'type':type,'price':price, 'vendor': vendors[v]});
+        }
+      }
+    }
+    filtered.sort(function(a, b){
       return a.price - b.price;
     })
-    let responded = false
-    for(var i in options){
-      if(maxPassengers[options[i].car_type] >= noPassengers){
+    for(var i in filtered){
+      if(passengerCapacity[filtered[i].type] >= noPassengers){
         //Only print if vehicle capacity is sufficient
-        console.log(options[i].car_type + ' (' + options[i].price + ')')
+        console.log(filtered[i].type + '-' + filtered[i].vendor + '-' + filtered[i].price)
         responded = true
       }
     }
-    //Alert user that API call succeeded but no suitable vehicles were found
     if(!responded) console.log('No suitable vehicles found')
   })
   .catch(error => {
-    console.log('API error' + error);
+    console.log('API error, please try again (' + error + ')');
   });
