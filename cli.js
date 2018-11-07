@@ -32,38 +32,25 @@ let axios = require('axios');
 const apiRoot = 'https://techtest.rideways.com/'
 let queries = '?pickup=' + pickup + '&dropoff=' + dropoff
 let filtered =[]
-callDave(filtered);
+let apis = ['dave', 'eric', 'jeff']
+callAPI(filtered, apis, 0)
 
-//Calls DAVE API, then calls callEric method
-function callDave(filtered){
-  axios({ method: 'GET', url: apiRoot + 'dave' + queries, timeout: 2000
-  }).then(response => { callEric(addToList(filtered, response.data.options, 'dave'));
+//Function to call API's
+//Takes results list, list of APIs, index of API currently querying
+function callAPI(results, apis, current){
+  axios({ method: 'GET', url: apiRoot + apis[current] + queries, timeout: 2000
+  }).then(response => {
+    results = addToList(results, response.data.options, apis[current]);
+    if(current < apis.length-1) callAPI(results, apis, current+1);
+    else accumulate(results);
   })
   .catch(error => {
-    console.log('> API for DAVE did not respond or was too slow');
-    callEric(filtered);
+    console.log('> API for ' + apis[current] + ' did not respond or was too slow');
+    if(current < apis.length-1) callAPI(results, apis, current+1);
+    else accumulate(results);
   })
 }
-//Calls ERIC API, then calls callJeff method
-function callEric(filtered){
-  axios({ method: 'GET', url: apiRoot + 'eric' + queries, timeout: 2000
-  }).then(response => { callJeff(addToList(filtered, response.data.options, 'eric'));
-  })
-  .catch(error => {
-    console.log('> API for ERIC did not respond or was too slow');
-    callJeff(filtered);
-  })
-}
-//Calls JEFF API, then calls accumulate method
-function callJeff(filtered){
-  axios({ method: 'GET', url: apiRoot + 'jeff' + queries, timeout: 2000
-}).then(response => { accumulate(addToList(filtered, response.data.options, 'jeff'));
-  })
-  .catch(error => {
-    console.log('> API for JEFF did not respond or was too slow');
-    accumulate(filtered);
-  })
-}
+
 //Sorts and prints the filtered list of taxi options
 function accumulate(filtered){
   filtered.sort(function(a, b){
@@ -78,7 +65,6 @@ function accumulate(filtered){
   }
   if(!responded) console.log('No suitable vehicles found')
 }
-
 
 //Appends the response from one api call to the filtered list
 function addToList(list, response, vendor){
