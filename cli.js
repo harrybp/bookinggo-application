@@ -23,13 +23,15 @@ try {
   dropoff = args[1].split(',')
   numberOfPassengers = parseInt(args[2])
   if(pickup.length != 2 || dropoff.length != 2) throw 'Coordinates should have 2 parts.'
+  if(isNaN(pickup[0]) || isNaN(pickup[1]) || isNaN(dropoff[0]) || isNaN(dropoff[1]))
+        throw 'Coordinates should contain numbers only'
 } catch(err) {
   console.log('Incorrect input: ' + err)
   return
 }
 
 //Make requests to API
-callAllAPIs(pickup, dropoff, numberOfPassengers)
+callAllAPIs(pickup, dropoff, numberOfPassengers).then(result => { output(result, numberOfPassengers) })
 
 //Sorts, filters and prints the results to command line
 function output(results, numberOfPassengers){
@@ -55,7 +57,7 @@ async function callAllAPIs(pickup, dropOff, numberOfPassengers){
       let response = await callAPI(apiRoot + apis[api] + queries)
       results = addToList(results, response, apis[api])
   }
-  output(results, numberOfPassengers)
+  return results
 }
 
 //Calls one API and returns results
@@ -69,7 +71,8 @@ async function callAPI(url){
       resolve(response.data.options)
     })
     .catch(error => { //Log error then continue to next api as above
-      console.log(url.split('?')[0] + ' did not respond or was too slow')
+      if(error.response) console.log(error.response.data.message + ' (' + error.response.data.path + ')') //Output any error response from API
+      else console.log(url.split('?')[0] + ' did not respond or was too slow') //No response
       resolve([])
     })
   })
