@@ -23,8 +23,8 @@ try {
   dropoff = args[1].split(',')
   numberOfPassengers = parseInt(args[2])
   if(pickup.length != 2 || dropoff.length != 2) throw 'Coordinates should have 2 parts.'
-  if(isNaN(pickup[0]) || isNaN(pickup[1]) || isNaN(dropoff[0]) || isNaN(dropoff[1]))
-        throw 'Coordinates should contain numbers only'
+  if(isNaN(pickup[0]) || isNaN(pickup[1]) || isNaN(dropoff[0]) || isNaN(dropoff[1]) || isNaN(numberOfPassengers))
+        throw 'All arguments should contain numbers only'
 } catch(err) {
   console.log('Incorrect input: ' + err)
   return
@@ -47,7 +47,7 @@ function output(results, numberOfPassengers){
   }
   if(!resultFound)
     console.log('No suitable vehicles found')
-}  
+}
 
 //Calls all API's and returns the accumulated results
 async function callAllAPIs(pickup, dropOff, numberOfPassengers){
@@ -64,8 +64,8 @@ async function callAllAPIs(pickup, dropOff, numberOfPassengers){
 async function callAPI(url){
   return new Promise((resolve, reject) => {
     axios({ //Send get request to api
-      method: 'GET', 
-      url: url, 
+      method: 'GET',
+      url: url,
       timeout: 2000
     }).then(response => {
       resolve(response.data.options)
@@ -90,10 +90,8 @@ function addToList(list, response, vendor){
     }
     if(found == -1) //Entry was not in results list so add it to list
       list.push({'type':response[o].car_type,'price':response[o].price, 'vendor': vendor})
-    else if(list[found].price > response[o].price) //If entry was already in list but new price is lower 
-      list[found] = {'type':response[o].car_type, 'price':response[o].price, 'vendor': vendor} 
+    else if(list[found].price > response[o].price) //If entry was already in list but new price is lower
+      list[found] = {'type':response[o].car_type, 'price':response[o].price, 'vendor': vendor}
   }
   return list
 }
-
-
